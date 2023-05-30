@@ -160,42 +160,39 @@ SRv6: Instantiation of SR on the IPv6 data plane.
 
 # Path Segment
 
-A Path Segment is a single label that is assigned from the Segment
-Routing Local Block (SRLB) {{RFC8402}} or Segment Routing
+A Path Segment Identifier(PSID) is a single label that is assigned from the Segment Routing Local Block (SRLB) {{RFC8402}} or Segment Routing
 Global Block (SRGB) {{RFC8402}} or dynamic MPLS label pool
-of the egress node of an SR path. Whether a Path Segment is allocated
+of the egress node of an SR path. Whether a PSID is allocated
 from the SRLB, SRGB, or a dynamic range depends on specific use cases. If
-the Path Segment is only used by the egress node to identify a SR path,
+the PSID is only used by the egress node to identify a SR path,
 the SRLB, SRGB or dynamic MPLS label pool can be used. If the Path
 Segment is used by an intermediate node to identify a SR path, the SRGB
 MUST be used. Three use cases are introduced in Section 5, 6, and 7 of
 this document.
 
-When a Path Segment is used, the Path Segment MUST be inserted at the
+When a PSID is used, the PSID MUST be inserted at the
 ingress node and MUST immediately follow the last label of the SR path,
 in other words, inserted after the routing segment
 (adjacency/node/prefix segment) pointing to the egress node.
 
 The term of SR path used in this document is a general term that can
 be used to describe a SR Policy, a Candidate-Path (CP), or a Segment-List
-(SL) {{RFC9256}}. Therefore,
-the Path Segment may be used to identify an SR Policy, its CP, or a SL
-terminating on an egress node depending on the use-case.
+(SL) {{RFC9256}}. Therefore, the PSID may be used to identify an SR Policy, its CP, or a SL terminating on an egress node depending on the use-case.
 
 The value of the TTL field in the MPLS label stack entry containing
-the Path Segment MUST be set to the same value as the TTL of the last
+the PSID MUST be set to the same value as the TTL of the last
 label stack entry for the last segment in the SR path. If the Path
 Segment is the bottom label, the S bit MUST be set.
 
-Normally, an intermediate node will not process the Path Segment label in the label stack. But in some use cases, an intermediate node MAY process the Path Segment label in the label stack. In these cases, the Path Segment label MUST be learned before processing. The detailed use cases and processing is out of the scope of this document.
+Normally, an intermediate node will not process the PSID in the label stack. But in some use cases, an intermediate node MAY process the PSID in the label stack. In these cases, the PSID MUST be learned before processing. The detailed use cases and processing is out of the scope of this document.
 
-A Path Segment can be used in the case of Penultimate Hop Popping
+A PSID can be used in the case of Penultimate Hop Popping
 (PHP), where some labels are be popped off at the penultimate hop of an
-SR path, but the Path Segment MUST NOT be popped off until it reaches at
+SR path, but the PSID MUST NOT be popped off until it reaches at
 the egress node.
 
-The egress node MUST pop the Path Segment. The egress node MAY use
-the Path Segment for further processing. For example, when performance
+The egress node MUST pop the PSID. The egress node MAY use
+the PSID for further processing. For example, when performance
 measurement is enabled on the SR path, it can trigger packet counting or
 timestamping.
 
@@ -204,19 +201,15 @@ Segment label in the MPLS label stack. In this case, the egress node
 MUST be capable of processing more than one label. The additional
 processing required, may have an impact on forwarding performance.
 
-Generic Associated Label (GAL) is used for Operations, Administration
+Generic Associated Label (GAL) MAY be used for Operations, Administration
 and Maintenance (OAM) in MPLS networks {{RFC5586}}. When
 GAL is used, it MUST be added at the bottom of the label stack after the
-Path Segment label.
+PSID.
 
-Entropy label and Entropy Label Indicator (ELI) as described in {{RFC8662}} for SR-MPLS path, can be placed before or after the
-Path Segment label in the MPLS label stack.
+Entropy label and Entropy Label Indicator (ELI) as described in {{RFC8662}} for SR-MPLS path, can be placed before or after the PSID in the MPLS label stack.
 
 The SR path computation needs to know the Maximum SID Depth (MSD)
-that can be imposed at each node/link of a given SR path {{RFC8664}}. This ensures that the SID stack depth of a computed
-path does not exceed the number of SIDs the node is capable of imposing.
-The MSD used for path computation MUST include the Path Segment
-label.
+that can be imposed at each node/link of a given SR path {{RFC8664}}. This ensures that the SID stack depth of a computed path does not exceed the number of SIDs the node is capable of imposing. The MSD used for path computation MUST include the PSID.
 
 The label stack with Path Segment is shown in {{figure1}}:
 
@@ -232,7 +225,7 @@ The label stack with Path Segment is shown in {{figure1}}:
             +--------------------+
             |      Label n       |
             +--------------------+
-            |     Path Segment   |
+            |        PSID        |
             +--------------------+
             |       ...          |
             +--------------------+
@@ -246,32 +239,22 @@ Where:
 * The Labels 1 to n are the segment label stack used to direct how
   to steer the packets along the SR path.
 
-* The Path Segment identifies the SR path in the context of the
-  egress node of the SR path.
+* The PSID identifies the SR path in the context of the egress node of the SR path.
 
 There may be multiple paths (or sub-path(s)) carried in the
 label stack, for each path (or sub-path), there may be a corresponding
 Path Segment carried. A use case can be found in Section 4.
 
-In addition, adding a Path Segment to a label stack will increase the
-depth of the label stack, the Path Segment should be accounted when
+In addition, adding a PSID to a label stack will increase the
+depth of the label stack, the PSID should be accounted when
 considering Maximum SID Depth (MSD){{RFC8992}}.
 
 
-# Path Segment Allocation and Distribution
+# PSID Allocation and Distribution
 
-There are two ways that leverage a centralized controller (e.g., SDN
-controller) to assign and distribute the Path Segment. One is the Path
-Computation Element Communication Protocol (PCEP) based Path Segment
-allocation for SR Policy, the other is BGP based Path Segment allocation for SR Policy. The detailed solutions are out of the scope of this document and defined in other documents.
+There are some ways to assign and distribute the PSID. The PSID can be configured locally or allocated by a centralized controller or by other means, this is out of the scope of this document.  If an egress cannot support the use of the PSID, it MUST reject the attempt to configure the label.
 
-For both ways, the controller MUST make sure (e.g., by some capability
-discovery mechanisms outside the scope of this document) that the
-egress node knows the Path Segment and it can process it, as well as
-the label does not collide with any label allocation done by the
-egress node.
-
-If an egress cannot support the use of the Path Segment Label, it MUST reject the attempt to configure the label.
+If an egress cannot support the use of the PSID, it MUST reject the attemption of configuration.
 
 # Nesting of Path Segments
 
@@ -281,17 +264,15 @@ sub-paths, each sub-path is identified by a BSID. Then an end-to-end SR
 path can be identified by a list of BSIDs, therefore, it can provide
 better scalability.
 
-BSID and Path SID (PSID) can be combined to achieve both sub-path and
+BSID and PSID can be combined to achieve both sub-path and
 end-to-end path monitoring. A reference model for such a combination in
 (Figure 2) shows an end-to-end path (A->D) that spans three domains
 (Access, Aggregation and Core domain) and consists of three sub-paths,
 one in each sub-domain (sub-path (A->B), sub-path (B->C) and
-sub-path (C->D)). Each sub-path is allocated a BSID. For nesting the
-sub-paths, each sub-path is allocated a PSID. Then, the SID list of the
-end-to-end path can be expressed as \<BSID1, BSID2, ..., BSIDn,
-e-PSID>, where the e-PSID is the PSID of the end-to-end path. The SID
-list of a sub-path can be expressed as \<SID1, SID2, ...SIDn,
-s-PSID>, where the s-PSID is the PSID of the sub-path.
+sub-path (C->D)). Each sub-path is associated with a BSID and a s-PSID. 
+
+The SID list of the end-to-end path can be expressed as \<BSID1, BSID2, ..., BSIDn, e-PSID>, where the e-PSID is the PSID of the end-to-end path. The SID
+list of a sub-path can be expressed as \<SID1, SID2, ...SIDn, s-PSID>, where the s-PSID is the PSID of the sub-path.
 
 {{figure2}} shows the details of the label stacks when PSID and BSID are
 used to support both sub-path and end-to-end path monitoring in a
@@ -329,17 +310,14 @@ As defined in {{RFC7799}}, performance measurement can
 be classified into Passive, Active, and Hybrid measurement. Since Path
 Segment is encoded in the SR-MPLS Label Stack as shown in Figure 1,
 existing implementation on the egress node can be leveraged for
-measuring packet counts using the incoming SID (the Path Segment). A
-different scheme such as carrying such identifier after the bottom of
-the label stack may require new implementation.
+measuring packet counts using the incoming SID (the PSID). 
 
 For Passive performance measurement, path identification at the
 measuring points is the pre-requisite. Path Segment can be used by the
 measuring points (e.g., the ingress and egress nodes of the SR path or a
 centralized controller) to correlate the packet counts and timestamps
 from the ingress and egress nodes for a specific SR path, then packet
-loss and delay can be calculated for the end-to-end path,
-respectively.
+loss and delay can be calculated for the end-to-end path, respectively.
 
 Path Segment can also be used for Active performance measurement for
 an SR path in SR-MPLS networks for collecting packet counters and
@@ -357,7 +335,7 @@ the SR Path associated with the collected performance metrics.
 
 In some scenarios, for example, mobile backhaul transport networks,
 there are requirements to support bidirectional paths, and the path is
-normally treated as a single entity. The both directions of the path
+normally treated as a single entity. Forward and reverse directions of the path
 have the same fate, for example, failure in one direction will result in
 switching traffic at both directions. MPLS supports this by introducing
 the concepts of co-routed bidirectional LSP and associated bidirectional
@@ -386,26 +364,14 @@ Segment label allocated by the egress node.
 
 There then needs to be a method of binding this SR path identifiers
 into equivalence groups such that the egress node can determine for
-example, the set of packets that represent a single primary path. It is
-obvious that this equivalence group can be instantiated in the network
+example, the set of packets that represent a single primary path. This equivalence group can be instantiated in the network
 by an SDN controller using the Path Segments of the SR paths.
 
 
 # Security Considerations {#Security}
 
-Path Segment in SR-MPLS does not introduce any new behavior or any
-change in the way the MPLS data plane works.
-{{Section 8.1 of RFC8402}} describes the security consideration for SR-MPLS.
-Path segment is additional metadata that is added to the packet
-consisting of the SR path.
+Path Segment in SR-MPLS is used within the SR domain, and no new security threats are introduced comparing to current SR-MPLS. The security consideration of SR-MPLS is described in {{Section 8.1 of RFC8402}} applies to this document. 
 
-An attacker could exploit path segment to manipulate the accounting
-of SR traffic at the egress. Path segment could also be used to monitor
-traffic patterns for the E2E paths. The control protocols used to
-allocate path segments could also be exploited to disseminate incorrect
-path segment information. Note that, the path segment is imposed at the
-ingress and removed at the egress boundary and is not leaked out of the
-administered domain.
 
 
 # IANA Considerations {#IANA}
