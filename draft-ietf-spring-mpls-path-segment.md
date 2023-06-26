@@ -18,7 +18,7 @@ title: Path Segment in MPLS Based Segment Routing Network
 abbrev: Path Segment in SR-MPLS
 area: Routing Area
 wg: SPRING Working Group
-date: 2023-05-30
+date: 2023-06-26
 
 author:
 - name: Weiqiang Cheng
@@ -160,56 +160,29 @@ SRv6: Instantiation of SR on the IPv6 data plane.
 
 # Path Segment
 
-A Path Segment Identifier(PSID) is a single label that is assigned from the Segment Routing Local Block (SRLB) {{RFC8402}} or Segment Routing
-Global Block (SRGB) {{RFC8402}} or dynamic MPLS label pool
-of the egress node of an SR path. Whether a PSID is allocated
-from the SRLB, SRGB, or a dynamic range depends on specific use cases. If
-the PSID is only used by the egress node to identify a SR path,
-the SRLB, SRGB or dynamic MPLS label pool can be used. If the Path
-Segment is used by an intermediate node to identify a SR path, the SRGB
-MUST be used. Three use cases are introduced in Section 5, 6, and 7 of
-this document.
+A Path Segment Identifier(PSID) is a single label that is assigned from the Segment Routing Local Block (SRLB) {{RFC8402}} or Segment Routing Global Block (SRGB) {{RFC8402}} or dynamic MPLS label pool of the egress node of an SR path. Whether a PSID is allocated from the SRLB, SRGB, or a dynamic range depends on specific use cases. If the PSID is only used by the egress node to identify an SR path, the SRLB, SRGB or dynamic MPLS label pool can be used. If the Path Segment is used by an intermediate node to identify an SR path, the SRGB MUST be used. Three use cases are introduced in Section 5, 6, and 7 of this document.
 
-When a PSID is used, the PSID MUST be inserted at the
-ingress node and MUST immediately follow the last label of the SR path,
-in other words, inserted after the routing segment
-(adjacency/node/prefix segment) pointing to the egress node.
+The term of SR path used in this document is a general term that can be used to describe an SR Policy, a Candidate-Path (CP), or a Segment-List (SL) {{RFC9256}}. Therefore, the PSID may be used to identify an SR Policy, its CP, or a SL terminating on an egress node depending on the use-case.
 
-The term of SR path used in this document is a general term that can
-be used to describe a SR Policy, a Candidate-Path (CP), or a Segment-List
-(SL) {{RFC9256}}. Therefore, the PSID may be used to identify an SR Policy, its CP, or a SL terminating on an egress node depending on the use-case.
+When a PSID is used, the PSID MUST be inserted at the ingress node and MUST immediately follow the last label of the SR path, in other words, inserted after the routing segment (adjacency/node/prefix segment) pointing to the egress node of the SR path. Otherwise, the PSID may be processed by an intermediate node, which may cause error in forwarding because of mis-matching if the PSID is allocated from a SRLB.
 
-The value of the TTL field in the MPLS label stack entry containing
-the PSID MUST be set to the same value as the TTL of the last
-label stack entry for the last segment in the SR path. If the Path
-Segment is the bottom label, the S bit MUST be set.
+The value of the TTL field in the MPLS label stack entry containing the PSID MUST be set to the same value as the TTL of the last label stack entry for the last segment in the SR path. If the Path Segment is the bottom label, the S bit MUST be set.
 
-Normally, an intermediate node will not process the PSID in the label stack. But in some use cases, an intermediate node MAY process the PSID in the label stack. In these cases, the PSID MUST be learned before processing. The detailed use cases and processing is out of the scope of this document.
+Normally, an intermediate node will not process the PSID in the label stack because the PSID is inserted after the routing segment pointing to the egress node. But in some use cases, an intermediate node MAY process the PSID in the label stack by scanning the label stack or other means. In these cases, the PSID MUST be learned before processing. The detailed use cases and processing is out of the scope of this document.
 
-A PSID can be used in the case of Penultimate Hop Popping
-(PHP), where some labels are be popped off at the penultimate hop of an
-SR path, but the PSID MUST NOT be popped off until it reaches at
-the egress node.
+A PSID can be used in the case of Penultimate Hop Popping (PHP), where some labels are be popped off at the penultimate hop of an SR path, but the PSID MUST NOT be popped off until it reaches at the egress node.
 
-The egress node MUST pop the PSID. The egress node MAY use
-the PSID for further processing. For example, when performance
-measurement is enabled on the SR path, it can trigger packet counting or
-timestamping.
+The egress node MUST pop the PSID. The egress node MAY use the PSID for further processing. For example, when performance measurement is enabled on the SR path, it can trigger packet counting or timestamping.
 
-In some deployments, service labels may be added after the Path
-Segment label in the MPLS label stack. In this case, the egress node
-MUST be capable of processing more than one label. The additional
-processing required, may have an impact on forwarding performance.
+In some deployments, service labels may be added after the Path Segment label in the MPLS label stack. In this case, the egress node
+MUST be capable of processing more than one label. The additional processing required, may have an impact on forwarding performance.
 
-Generic Associated Label (GAL) MAY be used for Operations, Administration
-and Maintenance (OAM) in MPLS networks {{RFC5586}}. When
-GAL is used, it MUST be added at the bottom of the label stack after the
-PSID.
+Generic Associated Label (GAL) MAY be used for Operations, Administration and Maintenance (OAM) in MPLS networks {{RFC5586}}. When
+GAL is used, it MUST be added at the bottom of the label stack after the PSID.
 
 Entropy label and Entropy Label Indicator (ELI) as described in {{RFC8662}} for SR-MPLS path, can be placed before or after the PSID in the MPLS label stack.
 
-The SR path computation needs to know the Maximum SID Depth (MSD)
-that can be imposed at each node/link of a given SR path {{RFC8664}}. This ensures that the SID stack depth of a computed path does not exceed the number of SIDs the node is capable of imposing. The MSD used for path computation MUST include the PSID.
+The SR path computation needs to know the Maximum SID Depth (MSD) that can be imposed at each node/link of a given SR path {{RFC8664}}. This ensures that the SID stack depth of a computed path does not exceed the number of SIDs the node is capable of imposing. The MSD used for path computation MUST include the PSID.
 
 The label stack with Path Segment is shown in {{figure1}}:
 
