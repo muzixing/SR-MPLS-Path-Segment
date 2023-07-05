@@ -18,7 +18,7 @@ title: Path Segment in MPLS Based Segment Routing Network
 abbrev: Path Segment in SR-MPLS
 area: Routing Area
 wg: SPRING Working Group
-date: 2023-06-26
+date: 2023-07-05
 
 author:
 - name: Weiqiang Cheng
@@ -73,26 +73,17 @@ informative:
 --- abstract
 
 
-A Segment Routing (SR) path is identified by an SR segment list. Only
-the complete segment list can identify the end-to-end SR path, and a
+A Segment Routing (SR) path is identified by an SR segment list. A
 sub-set of segments from the segment list cannot distinguish one SR path
 from another as they may be partially congruent. SR path identification
 is a pre-requisite for various use-cases such as Performance Measurement
-(PM), bidirectional paths correlation, and end-to-end 1+1 path
-protection.
+(PM), and end-to-end 1+1 path protection.
 
-In SR for MPLS data plane (SR-MPLS), the segment identifiers are
-stripped from the packet through label popping as the packet transits
-the network. This means that when a packet reaches the egress of the SR
-path, it is not possible to determine on which SR path it traversed the
-network.
+In SR for MPLS data plane (SR-MPLS), it is impossible to determine on which SR path it traversed the network because the segment identifiers are stripped from the packet through label popping as the packet transits
+the network. 
 
-This document defines a new type of segment that is referred to as
-Path Segment, which is used to identify an SR path in an SR-MPLS
-network. When used, it is inserted by the ingress node of the SR path
-and immediately follows the last segment identifier in the segment list
-of the SR path. The Path Segment is preserved until it reaches the
-egress node for SR path identification and correlation.
+This document defines Path Segment to identify an SR path in an SR-MPLS
+network. 
 
 --- middle
 
@@ -109,26 +100,26 @@ In an SR-MPLS network, when a packet is transmitted along an SR path,
 the labels in the MPLS label stack will be swapped or popped. So that no
 label or only the last label (e.g. Explicit-Null label) may be left in
 the MPLS label stack when the packet reaches the egress node. Thus, the
-egress node cannot determine along which SR path the packet came.
+egress node cannot determine along which SR path the packet came. 
 
 However, to support various use-cases in SR-MPLS networks, like
-end-to-end 1+1 path protection (Live-Live case) {{RFC4426}},
-bidirectional path {{RFC5654}}, or Performance Measurement (PM)
-{{RFC7799}}, the ability to implement path identification on the egress
-node is a pre-requisite.
+end-to-end 1+1 path protection (Live-Live case) {{psid-for-protection}},
+bidirectional path {{psid-for-bpath}}, or Performance Measurement (PM)
+{{psid-for-pm}}, the ability to implement path identification on the egress
+node is a pre-requisite. 
 
 Therefore, this document introduces a new segment type that is
 referred to as the Path Segment. A Path Segment is defined to uniquely
 identify an SR path in an SR-MPLS network. It MAY be used by the egress
 nodes for path identification hence to support various use-cases
 including SR path PM, end-to-end 1+1 SR path protection, and
-bidirectional SR paths correlation.
+bidirectional SR paths correlation. Note that, Per-path states will be maintained in the egress node due to the requirements in these use cases, though in normal cases that the per-path states will be maintained in the ingress node only in the SR architecture.
 
 ## Requirements Language
 
 {::boilerplate bcp14-tagged}
 
-## Abbreviations
+## Abbreviations and Terms
 
 DM: Delay Measurement.
 
@@ -156,6 +147,7 @@ SR-MPLS: Instantiation of SR on the MPLS data plane.
 
 SRv6: Instantiation of SR on the IPv6 data plane.
 
+Sub-Path: A sub-path is a part of the a path, which contains a sub-set of the nodes and links of the path.  
 
 
 # Path Segment
@@ -170,7 +162,7 @@ The value of the TTL field in the MPLS label stack entry containing the PSID MUS
 
 Normally, an intermediate node will not process the PSID in the label stack because the PSID is inserted after the routing segment pointing to the egress node. But in some use cases, an intermediate node MAY process the PSID in the label stack by scanning the label stack or other means. In these cases, the PSID MUST be learned before processing. The detailed use cases and processing is out of the scope of this document.
 
-A PSID can be used in the case of Penultimate Hop Popping (PHP), where some labels are be popped off at the penultimate hop of an SR path, but the PSID MUST NOT be popped off until it reaches at the egress node.
+Some labels can be popped off at the penultimate hop of an SR path, but the PSID MUST NOT be popped off until it reaches at the egress node.
 
 The egress node MUST pop the PSID. The egress node MAY use the PSID for further processing. For example, when performance measurement is enabled on the SR path, it can trigger packet counting or timestamping.
 
@@ -217,10 +209,6 @@ Where:
 There may be multiple paths (or sub-path(s)) carried in the
 label stack, for each path (or sub-path), there may be a corresponding
 Path Segment carried. A use case can be found in Section 4.
-
-In addition, adding a PSID to a label stack will increase the
-depth of the label stack, the PSID should be accounted when
-considering Maximum SID Depth (MSD){{RFC8992}}.
 
 
 # PSID Allocation and Distribution
@@ -277,7 +265,7 @@ multi-domain scenario.
 {: #figure2 title="Nesting of Path Segments"}
 
 
-# Path Segment for Performance Measurement
+# Path Segment for Performance Measurement {#psid-for-pm}
 
 As defined in {{RFC7799}}, performance measurement can
 be classified into Passive, Active, and Hybrid measurement. Since Path
@@ -304,7 +292,7 @@ Path Segment can also be used for In-band PM for SR-MPLS to identify
 the SR Path associated with the collected performance metrics.
 
 
-# Path Segment for Bidirectional SR Path
+# Path Segment for Bidirectional SR Path {#psid-for-bpath}
 
 In some scenarios, for example, mobile backhaul transport networks,
 there are requirements to support bidirectional paths, and the path is
@@ -324,7 +312,7 @@ bidirectional path.
 
 
 
-# Path Segment for End-to-end Path Protection
+# Path Segment for End-to-end Path Protection {#psid-for-protection}
 
 For end-to-end 1+1 path protection (i.e., Live-Live case), the egress
 node of the path needs to know the set of paths that constitute the
