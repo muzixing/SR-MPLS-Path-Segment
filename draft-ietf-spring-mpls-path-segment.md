@@ -1,6 +1,6 @@
 ---
 v: 3
-docname: draft-ietf-spring-mpls-path-segment-12
+docname: draft-ietf-spring-mpls-path-segment-11
 cat: std
 stream: IETF
 consensus: true
@@ -19,7 +19,7 @@ title: Path Segment in MPLS Based Segment Routing Network
 abbrev: Path Segment in SR-MPLS
 area: Routing Area
 wg: SPRING Working Group
-date: 2023-09-07
+date: 2023-08-29
 
 author:
 - name: Weiqiang Cheng
@@ -95,13 +95,18 @@ In an SR-MPLS network, when a packet is transmitted along an SR path,
 the labels in the MPLS label stack will be swapped or popped. So that no
 label or only the last label (e.g. a service label or an Explicit-Null label) may be left in the MPLS label stack when the packet reaches the egress node. Thus, the egress node cannot use the SR label stack to determine along which SR path the packet came. 
 
-However, to support various use-cases in SR-MPLS networks, such as
+However, to support various use-cases in SR-MPLS networks, like
 end-to-end 1+1 path protection (Live-Live case) {{psid-for-protection}},
 bidirectional path {{psid-for-bpath}}, or Performance Measurement (PM)
 {{psid-for-pm}}, the ability to implement path identification on the egress
 node is a pre-requisite. 
 
-Therefore, this document introduces a new segment type, Path Segment. A Path Segment is defined to uniquely identify an SR path on the egress node of the path. It MAY be used by the egress nodes for path identification hence to support various use-cases including SR path PM, end-to-end 1+1 SR path protection, and bidirectional SR paths correlation. Note that, Per-path states will be maintained in the egress node due to the requirements in these use cases, though in normal cases that the per-path states will be maintained in the ingress node only in the SR architecture.
+Therefore, this document introduces a new segment type that is
+referred to as the Path Segment. A Path Segment is defined to uniquely
+identify an SR path on the egress node of the path. It MAY be used by the egress
+nodes for path identification hence to support various use-cases
+including SR path PM, end-to-end 1+1 SR path protection, and
+bidirectional SR paths correlation. Note that, Per-path states will be maintained in the egress node due to the requirements in these use cases, though in normal cases that the per-path states will be maintained in the ingress node only in the SR architecture.
 
 ## Requirements Language
 
@@ -129,6 +134,8 @@ SR: Segment Routing.
 
 SRLB: SR Local Block
 
+SRGB: SR Global Block
+
 SR-MPLS: Instantiation of SR on the MPLS data plane.
 
 Sub-Path: A sub-path is a part of the a path, which contains a sub-set of the nodes and links of the path.  
@@ -136,23 +143,26 @@ Sub-Path: A sub-path is a part of the a path, which contains a sub-set of the no
 
 # Path Segment
 
-A Path Segment Identifier(PSID) is a single label that is assigned from the Segment Routing Local Block (SRLB) {{RFC8402}} of the egress node of an SR path. 
+A Path Segment Identifier(PSID) is a single label that is assigned from the Segment Routing Local Block (SRLB) {{RFC8402}} or Segment Routing Global Block (SRGB) {{RFC8402}} or dynamic MPLS label pool of the egress node of an SR path. Whether a PSID is allocated from the SRLB, SRGB, or a dynamic range depends on specific use cases. If the PSID is only used by the egress node to identify an SR path, the SRLB, SRGB or dynamic MPLS label pool can be used. Three use cases are introduced in Section 5, 6, and 7 of this document.
 
-The term of SR path used in this document is a path described by a Segment-List (SL). A PSID is used to identify a Segment List. However, one PSID can be used to identify multiple Segment Lists in some use cases if needed. For example, one single PSID may be used to identify some or all Segment lists in a Candidate path or an SR policy, if an operator would like to aggregate these Segment Lists in operation. How to use the PSID to Segment Lists depends on the requirements of the use cases.
+The term of SR path used in this document is a path described by a Segment-List (SL). A PSID is used to identify a Segment List. However, one PSID can be used to identify multiple Segment Lists in some use cases if needed. For example, all the Segment lists in a Candidate path can use a single PSID, and all the Segment Lists in an SR policy can share the same PSID, if customers would like to aggregate the data among the Segment Lists. How to use the PSID to Segment Lists depends on the requirements of the use cases.
 
-When a PSID is used, the PSID can be inserted at the ingress node and MUST immediately follow the last label of the SR path associated to it, in other words, inserted after the routing segment (adjacency/node/prefix segment) pointing to the egress node of the SR path. Therefore, a PSID will not be the top label in the label stack when receiving on an intermidate node of the associated path, but it can be the top label in the label stack on the penultimate node after the last forwarding label with Penultimate Hop Popping (PHP) is popped off. Otherwise, the PSID may be processed by an intermediate node, which may cause error in forwarding because of mis-matching.
+When a PSID is used, the PSID MUST be inserted at the ingress node and MUST immediately follow the last label of the SR path, in other words, inserted after the routing segment (adjacency/node/prefix segment) pointing to the egress node of the SR path. Otherwise, the PSID may be processed by an intermediate node, which may cause error in forwarding because of mis-matching if the PSID is allocated from a SRLB.
 
-The value of the TTL field in the MPLS label stack entry containing a PSID can be set to any value except 0. If a PSID is the bottom label, the S bit MUST be set.
+The value of the TTL field in the MPLS label stack entry containing the PSID can be set to any value including 0, or the same value as the TTL of the last label stack entry for the last segment in the SR path. If the Path Segment is the bottom label, the S bit MUST be set.
+
+A PSID can be used in the case of Penultimate Hop Popping (PHP), where some labels are be popped off at the penultimate hop of an SR path. As per regular MPLS processing, the label below (including the PSID in this case) will not be popped by the penultimate node.
 
 The egress node MUST pop the PSID. The egress node MAY use the PSID for further processing. For example, when performance measurement is enabled on the SR path, it can trigger packet counting or timestamping.
 
-The addition of the PSID will require the egress to read and process the PSID label in addition to the regular processing (such as a below MPLS label or the MPLS payload). This additional processing may have an impact on forwarding performance.
+The addition of the PSID will require the egress to read and process the PSID label in addition to the regular processing (such as a below MPLS label or the MPLS payload). The additional processing required, may have an impact on forwarding performance。
 
 Generic Associated Label (GAL) MAY be used for Operations, Administration and Maintenance (OAM) in MPLS networks. As per {{RFC5586}}, when GAL is used, the ACH appears immediately after the bottom of the label stack.
 
+
 If Entropy Label is also used on this egress node, as per {{RFC6790}} the Entropy label Indicator (ELI) and Entropy Label (EL) would be placed before the tunnel label and hence does not interfere with the PSID which is placed below. 
 
-The SR path computation needs to know the Maximum SID Depth (MSD) that can be imposed at the ingress node of a given SR path {{RFC8664}}. This ensures that the SID stack depth of a computed path does not exceed the number of SIDs the node is capable of imposing. As per RFC8491 the MSD signals the total number of MPLS labels that can be imposed, where the total number of MPLS labels includes the PSID.
+The SR path computation needs to know the Maximum SID Depth (MSD) that can be imposed at the ingress node of a given SR path {{RFC8664}}. This ensures that the SID stack depth of a computed path does not exceed the number of SIDs the node is capable of imposing. As per RFC8491 the MSD signals the total number of MPLS labels that can be imposed. This includes the PSID.
 
 The label stack with Path Segment is shown in {{figure1}}:
 
@@ -181,6 +191,10 @@ Where:
   to steer the packets along the SR path.
 
 * The PSID identifies the SR path in the context of the egress node of the SR path.
+
+There may be multiple paths (or sub-path(s)) carried in the
+label stack, for each path (or sub-path), there may be a corresponding
+Path Segment carried. A use case can be found in {{psid-nesting}}.
 
 Signaling of the PSID between the egress, ingress and possibly a centralized controller is out of the scope of this document.
 
@@ -255,7 +269,7 @@ by an SDN controller using the Path Segments of the SR paths.
 ## Nesting of Path Segments {#psid-nesting}
 
 Binding SID (BSID) {{RFC8402}} can be used for SID list
-compression. With BSID, an end-to-end SR path can be splitted into several
+compression. With BSID, an end-to-end SR path can be split into several
 sub-paths, each sub-path is identified by a BSID. Then an end-to-end SR
 path can be identified by a list of BSIDs, therefore, it can provide
 better scalability.
@@ -302,49 +316,11 @@ multi-domain scenario.
 
 # Security Considerations {#Security}
 
-A Path Segment in SR-MPLS is a local label similar to other labels/Segment, such as a VPN label, defined in MPLS and SR-MPLS. The data plane processing of a PSID is a local implementation of an ingress node, or an egress node, which follows the same logic of existing MPLS dataplane.
+A Path Segment in SR-MPLS is a label similar to other labels/Segment, such as a VPN label or a Prefix SID, defined in MPLS and SR-MPLS. The data plane processing of a PSID is a local implementation of an ingress node, or an egress node, which follows the same logic of existing MPLS dataplane.
 
 A Path Segment is used within an SR-MPLS domain {{RFC8402}} and should not leak outside the domain, therefore no new security threats are introduced comparing to current SR-MPLS. The security consideration of SR-MPLS, such as boundary filtering described in {{Section 8.1 of RFC8402}} applies to this document. 
 
-The distribution of a PSID from an egress nodes to an ingress nodes is performed within an SR trusted domain, and it is out of the scope of this document. The details of the mechanism and related security considerations will be described in other documents.
-
-#  Implementation Status
-
-[Note to the RFC Editor - remove this section before publication, as well as remove the reference to {{RFC7942}}.
-
-This section records the status of known implementations of the protocol defined by this specification at the time of posting of this Internet-Draft, and is based on a proposal described in {{RFC7942}}. The description of implementations in this section is intended to assist the IETF in its decision processes in progressing drafts to RFCs. Please note that the listing of any individual implementation here does not imply endorsement by the IETF. Furthermore, no effort has been spent to verify the information presented here that was supplied by IETF contributors. This is not intended as, and must not be construed to be, a catalog of available implementations or their features. Readers are advised to note that other implementations may exist.
-
-According to {{RFC7942}}, "this will allow reviewers and working groups to assign due consideration to documents that have the benefit of running code, which may serve as evidence of valuable experimentation and feedback that have made the implemented protocols more mature. It is up to the individual working groups to use this information as they see fit".
-
-## Huawei Technologies
-
-* Organization: Huawei Technologies.
-
-* Implementation: Huawei PTN7900 Series and NCE controller 
-
-* Description: Huawei has implemented Path Segment to support SR Bidirectional Path (Section 2 & Section 3.2).
-
-* Maturity Level: Demo
-
-* Coverage: Partial
-
-* Contact: tanren@huawei.com 
-
-
-## New H3C Technologies
-
-* Organization: New H3C Technologies
-
-*  Implementation: H3C CR16000, CR19000 series routers running Version 7.1.086 or above
-
-*  Description: Path Segment for Bidirectional SR Path (Section 2 & Section 3.2)
-
-*  Maturity Level: Demo
-
-*  Coverage: Partial 
-
-* Contact:  linchangwang.04414@h3c.com
-
+A PSID is allocated by an egress node and distributed to an ingress. The distribution is performed within an SR trusted domain. However, the mechanism of distributing a PSID is out of the scope of this document, and its security consideration will be described in other documents.
 
 
 # IANA Considerations {#IANA}
