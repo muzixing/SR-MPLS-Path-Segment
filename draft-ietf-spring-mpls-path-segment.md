@@ -67,6 +67,7 @@ informative:
   RFC6790:
   RFC8664:
   RFC7799:
+  RFC7942:
 
 --- abstract
 
